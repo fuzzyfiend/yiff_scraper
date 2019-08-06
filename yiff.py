@@ -21,6 +21,7 @@ from copy import deepcopy as deepcopy
 # Third-Party Libraries
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 # Modules
 from classes.BuildingBlocks import State 
@@ -32,27 +33,57 @@ def preinit():
 
     #region BuildArgParser
     parser = argparse.ArgumentParser(description=__code_desc__)
-    parser.add_argument('-V','--version', action='version', version='%(prog)s '+__code_version__)
-    parser.add_argument('-v','--verbose', action='count', default=0, help="Print verbose output to the console. Multiple v's increase verbosity")
+    parser.add_argument('-V', '--version', action='version', version='%(prog)s '+__code_version__)
+    parser.add_argument('-v', '--verbose', action='count', default=0, help="Print verbose output to the console. Multiple v's increase verbosity")
     parser.add_argument('--debug', action='store_true', help="Toggle debugging output to the console.")
-    args = parser.parse_args()
-    pg_state.args = args
+    parser.add_argument('-o', '--output', default='siterip', help="Write all files and directory structure to the following location. Default is '%(default)s'")
+    pg_state.args = parser.parse_args()
     #endregion
 
 def init():
     pg_state = State()
     args = pg_state.args
-    ## Do program-specific initialization here
+
+    # setup directories
+    pg_state.exec_file = os.path.basename(__file__)
+    pg_state.exec_fpath = os.path.abspath(__file__)
+    pg_state.exec_dir = os.path.dirname(__file__)
+    pg_state.output_dir = os.path.join(pg_state.exec_dir, args.output)
 
 def main():
     ## PreInit program state and handle arguments
     preinit()
     pg_state = State()
     args = pg_state.args
- 
+
     ## Begin program execution with support for verbose/debuging
     try:
         init()
+
+        # Create directories and chdir
+        output_dir = os.path.abspath(pg_state.output_dir)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        os.chdir(output_dir)
+
+        # use the following for testing purposes
+        # 20645128 has relatively few submissions
+        # 881729 has quite a few submissions and saved files that span multiple pages
+        patrons_list = [20645128, 881792]
+        for pid in patrons_list:
+            check_str = ["patreon_data", "patreon_inline"]
+            base_url = 'https://yiff.party'
+            url = pg_state.lastUrl = urljoin(base_url, str(pid))
+
+            response = pg_state.lastRequestsResponse = requests.get(url)
+            soup = BeautifulSoup(response.content, "html.parser")
+            artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
+
+            # create artist directory and/or chdir to it
+            target = pg_state.lastTarget = os.path.join(output_dir, artist)
+            if not os.path.exists(target):
+                os.makedirs(target)
+            os.chdir(target)
 
     except Exception as e:
         if args.debug:
