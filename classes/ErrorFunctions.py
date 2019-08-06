@@ -31,17 +31,25 @@ def handleBacktrace(stack):
             debugOutput(k, v, type(v), "[<>]")
         else:
 
+            ## calling v.dump() or v.__dict__ on primitives throws AttributeError
+            ## so we cannot use try-catch to EAFP. So we need to LBYL carefully here
             try:
-                ## Try to call dump
-                d  = v.dump()
-                print("[<>] --> calling member.dump(), trace to follow")
-                debugDict(v.__class__, d, "[<!>]", ">> member variable")
+                ## Is dump() available?
+                b = hasattr(v, 'dump') and callable(getattr(v, 'dump'))
+                if b:
+                    d = v.dump()
+                    print("[<>] --> calling member.dump(), trace to follow")
+                    debugDict(v.__class__, d, "[<!>]", ">> member variable")
+                ## Otherwise try __dict__
+                else:
+                    d = v.__dict__
+                    print("[<>] --> iterating over member.__dict__, trace to follow")
+                    debugDict(v.__class__, d, "[<!>]", ">> member variable")
             except AttributeError:
-                ## try to call __dict__
-                d = v.__dict__
-                print("[<>] --> iterating over member.__dict__, trace to follow")
-                debugDict(v.__class__, d, "[<!>]", ">> member variable")
+                ## if not collection, exception, can dump(), can __dict__
+                ## then probably it is a primitive (str, int, bool)
+                debugOutput(k, v, type(v), "[<>]")
             finally:
-                ## regardless, dump the variable out if primitive
+                ## regardless, dump the variable out
                 debugOutput(k, v, type(v), "[<>]")
                 print()
