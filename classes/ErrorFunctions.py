@@ -3,6 +3,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+def vLogPGVars(crit, pg_state):
+    for x in crit:
+        print('[*] set pg_state.%s = %s' % (x, getattr(pg_state, x)) )
+
 def debugOutput(k, v, t, prompt="[<>]", header="stack variable"):
     print("%s %s: (%s) is of type (%s) and is (%s)" % (prompt, header, str(k), str(t), str(v)))
 

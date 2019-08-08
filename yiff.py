@@ -26,6 +26,9 @@ from urllib.parse import urljoin
 # Modules
 from classes.BuildingBlocks import State 
 from classes.ErrorFunctions import handleBacktrace
+from classes.WorkFunctions import extractCount
+from classes.WorkFunctions import getLinks
+from classes.ErrorFunctions import vLogPGVars
 
 def preinit():
     ## import program state
@@ -46,8 +49,8 @@ def init():
 
     # setup directories
     pg_state.exec_file = os.path.basename(__file__)
-    pg_state.exec_fpath = os.path.abspath(__file__)
     pg_state.exec_dir = os.path.dirname(__file__)
+    pg_state.exec_fpath = os.path.abspath(__file__)
     pg_state.output_dir = os.path.join(pg_state.exec_dir, args.output)
 
 def main():
@@ -61,35 +64,47 @@ def main():
         init()
 
         # Create directories and chdir
-        output_dir = os.path.abspath(pg_state.output_dir)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        os.chdir(output_dir)
+        output_path = pg_state.output_path = os.path.abspath(pg_state.output_dir)        
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        os.chdir(output_path)
 
+        # define basic vars
+        base_url = pg_state.base_url = 'https://yiff.party'
+        matchers = pg_state.matchers = ["patreon_data", "patreon_inline"]        
         # use the following for testing purposes
         # 20645128 has relatively few submissions
         # 881729 has quite a few submissions and saved files that span multiple pages
-        patrons_list = [20645128, 881792]
+        patrons_list = pg_state.patrons_list = [20645128, 881792]
         for pid in patrons_list:
-            check_str = ["patreon_data", "patreon_inline"]
-            base_url = 'https://yiff.party'
             url = pg_state.lastUrl = urljoin(base_url, str(pid))
-
             response = pg_state.lastRequestsResponse = requests.get(url)
             soup = BeautifulSoup(response.content, "html.parser")
             artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
+            counts_containers = soup.find_all('li', {"class": "tab col s6"})
+            for item in counts_containers:
+                if "Patreon" in item.string:
+                    patreon_post_count = extractCount(item.string)
+                elif "Shared" in item.string:
+                    shared_file_count = extractCount(item.string)
+
 
             # create artist directory and/or chdir to it
-            target = pg_state.lastTarget = os.path.join(output_dir, artist)
+            target = pg_state.lastTarget = os.path.join(output_path, artist)
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
 
+            patreon_links, other_links = getLinks(soup, matchers)
+            for link in patreon_links:
+                url = pg_state.lastUrl = urljoin(base_url, str(link))
+     
     except Exception as e:
         if args.debug:
             print("[<>] Caught Exception for handling")
             print("[<>] Cloning Stack")
-            stack = deepcopy(locals())
+            #stack = deepcopy(locals())
+            stack = locals()
             handleBacktrace(stack)
         else:
             raise
