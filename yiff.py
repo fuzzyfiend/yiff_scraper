@@ -16,7 +16,6 @@ import os
 import sys
 import argparse
 from pprint import pprint, pformat
-from copy import deepcopy as deepcopy
 
 # Third-Party Libraries
 import requests
@@ -30,7 +29,6 @@ from classes.WorkFunctions import extractCount
 from classes.WorkFunctions import getLinks
 from classes.ErrorFunctions import vLogPGVars
 from classes.ErrorFunctions import handleBacktrace
-
 
 def preinit():
     ## import program state
@@ -63,9 +61,10 @@ def main():
     ## Begin program execution with support for verbose/debuging
     try:
         init()
+        rs = pg_state.scraper
 
         # Create directories and chdir
-        output_path = pg_state.output_path = os.path.abspath(pg_state.output_dir)        
+        output_path = pg_state.output_path = os.path.abspath(pg_state.output_dir)
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         os.chdir(output_path)
@@ -73,7 +72,6 @@ def main():
         # define basic vars
         base_url = pg_state.base_url = 'https://yiff.party'
         matchers = pg_state.matchers = ["patreon_data", "patreon_inline"]        
-        rs = pg_state.scraper
         # use the following for testing purposes
         # 20645128 has relatively few submissions
         # 881729 has quite a few submissions and saved files that span multiple pages
@@ -106,7 +104,6 @@ def main():
         if args.debug:
             print("[<>] Caught Exception for handling")
             print("[<>] Cloning Stack")
-            #stack = deepcopy(locals())
             stack = locals()
             handleBacktrace(stack)
         else:

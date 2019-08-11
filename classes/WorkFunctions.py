@@ -5,6 +5,11 @@ from __future__ import absolute_import
 
 import re
 
+def getFileName(url):
+    lst = url.rsplit('/')
+    name = lst[-1]
+    return name
+
 def extractCount(string):
     match = re.search(r'\d+', string)
     return match.group()
