@@ -6,7 +6,7 @@
 * Ensure (Files) are being scrapped
 
 ## Execution
-* Be more persistant
+* Be more persistent
     * save traveled links to disk to speed up crawling
     * resume from last run
 

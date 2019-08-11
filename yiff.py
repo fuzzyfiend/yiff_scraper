@@ -24,11 +24,13 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
 # Modules
-from classes.BuildingBlocks import State 
-from classes.ErrorFunctions import handleBacktrace
+from classes.BuildingBlocks import State
+from classes.Scraper import Scraper
 from classes.WorkFunctions import extractCount
 from classes.WorkFunctions import getLinks
 from classes.ErrorFunctions import vLogPGVars
+from classes.ErrorFunctions import handleBacktrace
+
 
 def preinit():
     ## import program state
@@ -46,13 +48,10 @@ def preinit():
 def init():
     pg_state = State()
     args = pg_state.args
-
-    # setup directories
     pg_state.exec_file = os.path.basename(__file__)
     pg_state.exec_dir = os.path.dirname(__file__)
     pg_state.exec_fpath = os.path.abspath(__file__)
     pg_state.output_dir = os.path.join(pg_state.exec_dir, args.output)
-
 def main():
     ## PreInit program state and handle arguments
     preinit()
