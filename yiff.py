@@ -48,10 +48,12 @@ def preinit():
 def init():
     pg_state = State()
     args = pg_state.args
+    pg_state.scraper = Scraper()
     pg_state.exec_file = os.path.basename(__file__)
     pg_state.exec_dir = os.path.dirname(__file__)
     pg_state.exec_fpath = os.path.abspath(__file__)
     pg_state.output_dir = os.path.join(pg_state.exec_dir, args.output)
+        
 def main():
     ## PreInit program state and handle arguments
     preinit()
@@ -71,13 +73,15 @@ def main():
         # define basic vars
         base_url = pg_state.base_url = 'https://yiff.party'
         matchers = pg_state.matchers = ["patreon_data", "patreon_inline"]        
+        rs = pg_state.scraper
         # use the following for testing purposes
         # 20645128 has relatively few submissions
         # 881729 has quite a few submissions and saved files that span multiple pages
         patrons_list = pg_state.patrons_list = [20645128, 881792]
         for pid in patrons_list:
             url = pg_state.lastUrl = urljoin(base_url, str(pid))
-            response = pg_state.lastRequestsResponse = requests.get(url)
+            response = rs.doGETRequest(url)
+
             soup = BeautifulSoup(response.content, "html.parser")
             artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
             counts_containers = soup.find_all('li', {"class": "tab col s6"})
