@@ -44,6 +44,14 @@ class Scraper(BaseObject):
             'User-Agent': self.getTopUserAgent(),
             'Accept': self.getTopUserAgent(),
         })
+    
+    def doHEADRequest(self, url):
+        try:
+            resp = self.lastRequestResponse = self.req.head(url)
+            resp.raise_for_status()
+            return resp
+        except:
+            raise
 
     def doGETRequest(self, url):
         try:
@@ -53,6 +61,14 @@ class Scraper(BaseObject):
         except:
             raise
         
+    def doGETStream(self, url):
+        try:
+            resp = self.lastRequestResponse = self.req.get(url, stream=True)
+            resp.raise_for_status()
+            return resp
+        except:
+            raise
+
         
 def main():
     pass
