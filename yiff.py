@@ -18,15 +18,10 @@ import argparse
 from pprint import pprint, pformat
 
 # Third-Party Libraries
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 
 # Modules
 from classes.BuildingBlocks import State
-from classes.Scraper import Scraper
-from classes.WorkFunctions import extractCount
-from classes.WorkFunctions import getLinks
+from classes.Scraper import YPScraper
 from classes.ErrorFunctions import vLogPGVars
 from classes.ErrorFunctions import handleBacktrace
 
@@ -46,7 +41,8 @@ def preinit():
 def init():
     pg_state = State()
     args = pg_state.args
-    pg_state.scraper = Scraper()
+
+    pg_state.scraper = YPScraper()
     pg_state.exec_file = os.path.basename(__file__)
     pg_state.exec_dir = os.path.dirname(__file__)
     pg_state.exec_fpath = os.path.abspath(__file__)
@@ -69,25 +65,16 @@ def main():
             os.makedirs(output_path)
         os.chdir(output_path)
 
-        # define basic vars
-        base_url = pg_state.base_url = 'https://yiff.party'
-        matchers = pg_state.matchers = ["patreon_data", "patreon_inline"]        
         # use the following for testing purposes
         # 20645128 has relatively few submissions
         # 881729 has quite a few submissions and saved files that span multiple pages
-        patrons_list = pg_state.patrons_list = [20645128, 881792]
-        for pid in patrons_list:
-            url = pg_state.lastUrl = urljoin(base_url, str(pid))
-            response = rs.doGETRequest(url)
+        patreon_list = pg_state.patreon_list = [20645128, 881792]
 
-            soup = BeautifulSoup(response.content, "html.parser")
-            artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
-            counts_containers = soup.find_all('li', {"class": "tab col s6"})
-            for item in counts_containers:
-                if "Patreon" in item.string:
-                    patreon_post_count = extractCount(item.string)
-                elif "Shared" in item.string:
-                    shared_file_count = extractCount(item.string)
+        # foreach patreon
+        for pid in patreon_list:
+            metadata = pg_state.patreon_metadata = rs.patreonMetadata(pid)
+            artist = metadata['artist']
+            patreon_links = metadata['patreon_links']
 
 
             # create artist directory and/or chdir to it
@@ -95,11 +82,10 @@ def main():
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
-
-            patreon_links, other_links = getLinks(soup, matchers)
+                
             for link in patreon_links:
-                url = pg_state.lastUrl = urljoin(base_url, str(link))
-     
+                rs.download(link)
+
     except Exception as e:
         if args.debug:
             print("[<>] Caught Exception for handling")

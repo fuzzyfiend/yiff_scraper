@@ -5,6 +5,9 @@ from __future__ import absolute_import
 
 import re
 
+## Modules
+from .BuildingBlocks import State               #pylint: disable=relative-beyond-top-level
+
 def getFileName(url):
     lst = url.rsplit('/')
     name = lst[-1]
@@ -29,3 +32,15 @@ def getLinks(soup, matchers):
                 patreon_links.append(href)
                 break
     return list(set(patreon_links)), list(set(other_links))
+
+def writeUrlToDisk(url="", filename=""):
+    pg_state = State()
+    rs = pg_state.scraper #pylint: disable=no-member
+    print("Writing (%s) to: %s" % str(url), str(filename) )
+    fp = open(filename, 'wb')
+    httpstream = rs.doGETStream(url)
+    for chunk in httpstream.iter_content(chunk_size=8192):
+        fp.write(chunk)
+    fp.close()
+    print("Closing: %s" % str(filename))
+
