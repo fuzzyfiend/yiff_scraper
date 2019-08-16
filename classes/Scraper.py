@@ -15,8 +15,8 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 ## Modules
-from .BuildingBlocks import State               #pylint: disable=relative-beyond-top-level
 from .BuildingBlocks import BaseObject          #pylint: disable=relative-beyond-top-level
+from .BuildingBlocks import State               #pylint: disable=relative-beyond-top-level
 from .WorkFunctions import extractCount         #pylint: disable=relative-beyond-top-level
 from .WorkFunctions import getLinks             #pylint: disable=relative-beyond-top-level
 from .WorkFunctions import getFileName          #pylint: disable=relative-beyond-top-level
@@ -37,6 +37,9 @@ class Scraper(BaseObject):
             # Chrome/Win10
             "accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
         ]
+        o = State()
+        self.args = o.args              #pylint: disable=no-member
+        self.diskcache = o.diskcache    #pylint: disable=no-member
         self.req = requests.Session()
         self.setDefaultHeaders()
 

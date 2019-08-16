@@ -36,7 +36,7 @@ def getLinks(soup, matchers):
 def writeUrlToDisk(url="", filename=""):
     pg_state = State()
     rs = pg_state.scraper #pylint: disable=no-member
-    print("Writing (%s) to: %s" % str(url), str(filename) )
+    print("Writing (%s) to: %s" % (str(url), str(filename)) )
     fp = open(filename, 'wb')
     httpstream = rs.doGETStream(url)
     for chunk in httpstream.iter_content(chunk_size=8192):
