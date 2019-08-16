@@ -18,10 +18,11 @@ import argparse
 from pprint import pprint, pformat
 
 # Third-Party Libraries
+from diskcache import Cache
 
 # Modules
 from classes.BuildingBlocks import State
-from classes.Scraper import YPScraper
+from classes.YiffScraper import YPScraper
 from classes.ErrorFunctions import vLogPGVars
 from classes.ErrorFunctions import handleBacktrace
 
@@ -35,6 +36,8 @@ def preinit():
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Print verbose output to the console. Multiple v's increase verbosity")
     parser.add_argument('--debug', action='store_true', help="Toggle debugging output to the console.")
     parser.add_argument('-o', '--output', default='siterip', help="Write all files and directory structure to the following location. Default is '%(default)s'")
+    parser.add_argument('-c', '--caching-dir', default=".ypcache", help="Directory for caching metadata. Default is '%(default)s'")
+    parser.add_argument('--flush-cache', action='store_true', help="Toggle to flush the cache prior to running")
     pg_state.args = parser.parse_args()
     #endregion
 
@@ -42,7 +45,11 @@ def init():
     pg_state = State()
     args = pg_state.args
 
+    pg_state.diskcache = Cache(directory=args.caching_dir)
+    if args.flush_cache:
+        pg_state.diskcache.clear()
     pg_state.scraper = YPScraper()
+
     pg_state.exec_file = os.path.basename(__file__)
     pg_state.exec_dir = os.path.dirname(__file__)
     pg_state.exec_fpath = os.path.abspath(__file__)
