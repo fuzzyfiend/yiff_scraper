@@ -6,21 +6,14 @@ from __future__ import absolute_import
 ## Standard Libraries
 import os
 import sys
-import re
-from pprint import pprint,pformat
+from pprint import pprint
 
 ## Third-Party
 import requests
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
 
 ## Modules
 from .BuildingBlocks import BaseObject          #pylint: disable=relative-beyond-top-level
 from .BuildingBlocks import State               #pylint: disable=relative-beyond-top-level
-from .WorkFunctions import extractCount         #pylint: disable=relative-beyond-top-level
-from .WorkFunctions import getLinks             #pylint: disable=relative-beyond-top-level
-from .WorkFunctions import getFileName          #pylint: disable=relative-beyond-top-level
-from .WorkFunctions import writeUrlToDisk       #pylint: disable=relative-beyond-top-level
 
 class Scraper(BaseObject):
 
@@ -79,40 +72,6 @@ class Scraper(BaseObject):
         except:
             raise
 
-class YPScraper(Scraper):
-
-    def __init__(self, base_url="https://yiff.party", matchers=["patreon_data", "patreon_inline"]):
-        self.base_url = base_url
-        self.href_matchers = matchers
-
-    def getBaseUrl(self):
-        return self.base_url
-
-    def loadPatreonID(self, pid):
-        url = self.lastUrl = urljoin(self.base_url, str(pid))
-        self.lastResponse = self.doGETRequest(url)
-        return self.lastResponse        
-
-    def patreonMetadata(self, pid):
-        resp = self.loadPatreonID(pid)
-        soup = self.soup = BeautifulSoup(resp.content, "html.parser")
-        artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
-        counts_containers = soup.find_all('li', {"class": "tab col s6"})
-        for item in counts_containers:
-            if "Patreon" in item.string:
-                patreon_post_count = extractCount(item.string)
-            elif "Shared" in item.string:
-                shared_file_count = extractCount(item.string)
-        patreon_links, other_links = getLinks(self.soup, self.href_matchers)
-        return {
-            'artist': artist,
-            'patreon_post_count': patreon_post_count,
-            'shared_file_count': shared_file_count,
-            'patreon_links': patreon_links,
-            'other_links': other_links,
-        }
-
-        
 def main():
     pass
 
