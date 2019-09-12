@@ -31,6 +31,7 @@ class Scraper(BaseObject):
             "accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
         ]
         o = State()
+        super().__init__(state=o)
         self.args = o.args              #pylint: disable=no-member
         self.diskcache = o.diskcache    #pylint: disable=no-member
         self.req = requests.Session()

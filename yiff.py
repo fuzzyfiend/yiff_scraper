@@ -95,12 +95,14 @@ def main():
             artist = metadata['artist']
             patreon_links = metadata['patreon_links']
 
-
             # create artist directory and/or chdir to it
             target = pg_state.lastTarget = os.path.join(output_path, artist)
             if not os.path.exists(target):
                 os.makedirs(target)
             os.chdir(target)
+            if args.verbose:
+                print('[*] set pg_state.lastTarget = %s' % (pg_state.lastTarget) )
+                print('[*] --> This directory will be created if absent and navigated into')
                 
             for link in patreon_links:
                 rs.download(link)
