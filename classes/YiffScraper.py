@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 
 ## Modules
 from .Scraper import Scraper                    #pylint: disable=relative-beyond-top-level
+from .WorkFunctions import getAllLinks          #pylint: disable=relative-beyond-top-level
 
 class YPScraper(Scraper):
 
@@ -29,8 +30,11 @@ class YPScraper(Scraper):
 
     def loadPatreonID(self, pid):
         url = self.lastUrl = urljoin(self.base_url, str(pid))
+        if self.tracking_state:
+            if self.pg_state.args.verbose:
+                print("[**] GET URL: (%s)" % (url))
         self.lastResponse = self.doGETRequest(url)
-        return self.lastResponse        
+        return self.lastResponse
 
     def patreonMetadata(self, pid):
         resp = self.loadPatreonID(pid)
@@ -43,6 +47,10 @@ class YPScraper(Scraper):
             elif "Shared" in item.string:
                 shared_file_count = extractCount(item.string)
         patreon_links, other_links = getLinks(self.soup, self.href_matchers)
+        print('[+] Determined artist: %s' % artist)
+        print('[+] Determined patreon_post_count: %d' % int(patreon_post_count))
+        print('[+] Determined shared_file_count: %d' % int(shared_file_count))
+
         return {
             'artist': artist,
             'patreon_post_count': patreon_post_count,
@@ -62,15 +70,18 @@ class YPScraper(Scraper):
         # remove extraneous headers to reduce cache size.
         headers = self.deleteHeaders(headers, uselessHeaders)
         # extract etag as caching key, extract expire time in sec by Cache-Control
-        etag = headers['ETag']
-        expire = 604800 # 7 days by default
-        cc = headers['Cache-Control'].split(',')
-        for el in cc:
-            if 'max-age' in el:
-                expire = el.split('=')[1]
-        self.diskcache.set(etag, headers, expire=int(expire))
-        self.diskcache.set(url, etag, expire=int(expire))
-        return headers
+        try:
+            etag = headers['ETag']
+            expire = 604800 # 7 days by default
+            cc = headers['Cache-Control'].split(',')
+            for el in cc:
+                if 'max-age' in el:
+                    expire = el.split('=')[1]
+            self.diskcache.set(etag, headers, expire=int(expire))
+            self.diskcache.set(url, etag, expire=int(expire))
+            return headers
+        except KeyError:
+            return headers
 
 
 def main():

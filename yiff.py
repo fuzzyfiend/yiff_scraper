@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#region all_imports
 # Future Declarations
 from __future__ import print_function
 from __future__ import absolute_import
@@ -24,8 +25,8 @@ from diskcache import Cache
 # Modules
 from classes.BuildingBlocks import State
 from classes.YiffScraper import YPScraper
-from classes.ErrorFunctions import vLogPGVars
 from classes.ErrorFunctions import handleBacktrace
+#endregion
 
 def preinit():
     ## import program state
@@ -47,20 +48,23 @@ def init():
     pg_state = State()
     args = pg_state.args
 
-    pg_state.exec_file = os.path.basename(__file__)
-    pg_state.exec_dir = os.path.dirname(__file__)
-    pg_state.exec_fpath = os.path.abspath(__file__)
-    pg_state.output_dir = os.path.join(pg_state.exec_dir, args.output)
-    if args.verbose > 1:
-        crit = ["exec_file", "exec_dir", "exec_fpath", "output_dir"]
-        vLogPGVars(crit, pg_state)
-    os.chdir(pg_state.exec_dir)
+    exec_file = os.path.basename(__file__)
+    exec_dir = os.path.dirname(__file__)
+    exec_fpath = os.path.abspath(__file__)
+    pg_state.output_dir = os.path.join(exec_dir, args.output)
+    pg_state.exec = {
+        "exec_file": exec_file,
+        "exec_dir": exec_dir,
+        "exec_fullpath": exec_fpath,
+    }
+    os.chdir(exec_dir)
 
     if args.config:
         print("[*] Loading configuration file: %s" % args.config)
         j = pg_state.config = json.load(open(args.config))
-        pg_state.patreon_dict = j["patreon"]
-
+        pg_state.patreon_list = j["patreon_ids"]
+        pg_state.patreon_dict = j["patreons"]
+    
     pg_state.diskcache = Cache(directory=args.caching_dir)
     if args.flush_cache:
         pg_state.diskcache.clear()
@@ -86,14 +90,15 @@ def main():
             print('[*] set pg_state.output_path = %s' % (pg_state.output_path) )
             print('[*] --> This directory will be created if absent and navigated into')
 
-        #[55578,2479000,96435,9608858,706437,126683,881792,175584,460110,777164,3571295,253549,106008,10404964,690415,215736,3708137,2285596,121401,16943278,140212,2937211,10329385,7216191]
-        #patreon_list = pg_state.patreon_list = [55578,2479000,96435,9608858,706437,126683,881792,175584,460110,777164,3571295,253549,106008,10404964,690415,215736,3708137,2285596,121401,16943278,140212,2937211,10329385,7216191]
-
         # foreach patreon
-        for pid in patreon_list:
-            metadata = pg_state.patreon_metadata = rs.patreonMetadata(pid)
+        for pid,entry in pg_state.patreon_dict.items():
+            if args.verbose:
+                print('[*] Handling patron %d => %s' % (int(pid), str(entry)))
+                print('[*] Gathering metadata')
+
+            metadata = pg_state.patreon_metadata = rs.getPatreonMetadata(pid)
             artist = metadata['artist']
-            patreon_links = metadata['patreon_links']
+            patreon_links = all_links = metadata['all_links']
 
             # create artist directory and/or chdir to it
             target = pg_state.lastTarget = os.path.join(output_path, artist)
