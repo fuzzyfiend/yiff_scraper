@@ -10,6 +10,9 @@ from pprint import pprint
 
 ## Third-Party
 import requests
+from requests import HTTPError,ConnectionError,Timeout,RequestException
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 ## Modules
 from .BuildingBlocks import BaseObject          #pylint: disable=relative-beyond-top-level
@@ -18,6 +21,10 @@ from .BuildingBlocks import State               #pylint: disable=relative-beyond
 class Scraper(BaseObject):
 
     def __init__(self):
+        self.supported_methods = [
+            "HEAD",
+            "GET",
+        ]
         self.supported_useragents = [
             # Chrome/Win10
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36",
@@ -34,7 +41,7 @@ class Scraper(BaseObject):
         super().__init__(state=o)
         self.args = o.args              #pylint: disable=no-member
         self.diskcache = o.diskcache    #pylint: disable=no-member
-        self.req = requests.Session()
+        self.req = self.Session()
         self.setDefaultHeaders()
 
     def getTopUserAgent(self):
@@ -48,8 +55,22 @@ class Scraper(BaseObject):
             'User-Agent': self.getTopUserAgent(),
             'Accept': self.getTopUserAgent(),
         })
-    
-    def doHEADRequest(self, url):
+
+    #https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+    def Session(self, retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None):
+        session = session or requests.Session()
+        retry = Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        return session
+
         try:
             resp = self.lastRequestResponse = self.req.head(url)
             resp.raise_for_status()
@@ -57,21 +78,17 @@ class Scraper(BaseObject):
         except:
             raise
 
+    def doHEADRequest(self, url):
+        return self.doRequest(method='HEAD', url=url)
+
     def doGETRequest(self, url):
-        try:
-            resp = self.lastRequestResponse = self.req.get(url)
-            resp.raise_for_status()
-            return resp
-        except:
-            raise
-        
+        return self.doRequest(method='GET', url=url)
+
+    def doGETRequestWithParams(self, url, params):
+        return self.doRequest(method='GET', url=url, params=params)
+
     def doGETStream(self, url):
-        try:
-            resp = self.lastRequestResponse = self.req.get(url, stream=True)
-            resp.raise_for_status()
-            return resp
-        except:
-            raise
+        return self.doRequest(method='GET', url=url, stream=True)
 
 def main():
     pass
