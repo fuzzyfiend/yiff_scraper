@@ -20,10 +20,11 @@ from .WorkFunctions import getAllLinks          #pylint: disable=relative-beyond
 
 class YPScraper(Scraper):
 
-    def __init__(self, base_url="https://yiff.party", matchers=["patreon_data", "patreon_inline"]):
+    def __init__(self):
         super().__init__()
-        self.base_url = base_url
-        self.href_matchers = matchers
+        self.base_url = "https://yiff.party"
+        self.patreon_matchers = ["patreon_data", "patreon_inline"]
+        self.ignored_extensions = self.pg_state.config["ignored_extensions"]
 
     def getBaseUrl(self):
         return self.base_url
@@ -36,7 +37,15 @@ class YPScraper(Scraper):
         self.lastResponse = self.doGETRequest(url)
         return self.lastResponse
 
-    def patreonMetadata(self, pid):
+    def loadPatreonIDandPage(self, pid, page):
+        print("[*] handling page: %d" % int(page))
+        url = self.lastUrl = "https://yiff.party/render_posts"
+        params = { 's': 'patreon', 'c': pid, 'p': page}
+        print("[**] GET URL: (%s, %s)" % (url, params))
+        self.lastResponse = self.doGETRequestWithParams(url, params)
+        return self.lastResponse
+
+    def getPatreonMetadata(self, pid):
         resp = self.loadPatreonID(pid)
         soup = self.soup = BeautifulSoup(resp.content, "html.parser")
         artist = soup.find_all('span', {"class": "yp-info-name"})[0].string
@@ -46,7 +55,6 @@ class YPScraper(Scraper):
                 patreon_post_count = extractCount(item.string)
             elif "Shared" in item.string:
                 shared_file_count = extractCount(item.string)
-        patreon_links, other_links = getLinks(self.soup, self.href_matchers)
         print('[+] Determined artist: %s' % artist)
         print('[+] Determined patreon_post_count: %d' % int(patreon_post_count))
         print('[+] Determined shared_file_count: %d' % int(shared_file_count))

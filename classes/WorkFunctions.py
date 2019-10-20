@@ -65,6 +65,17 @@ def getPatreonLinks(soup, matchers):
                 break
     return list(set(patreon_links))
 
+def matchPatreonLinks(links, matchers):
+    patreon_links = []
+    for link in links:
+        for string in matchers:
+            if string not in link:
+                pass
+            else:
+                patreon_links.append(link)
+                break
+    return list(set(patreon_links))
+
 def writeUrlToDisk(url="", filename=""):
     pg_state = State()
     rs = pg_state.scraper #pylint: disable=no-member
