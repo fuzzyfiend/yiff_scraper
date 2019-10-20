@@ -59,12 +59,46 @@ class YPScraper(Scraper):
         print('[+] Determined patreon_post_count: %d' % int(patreon_post_count))
         print('[+] Determined shared_file_count: %d' % int(shared_file_count))
 
+        # Get all links on page one
+        cover_page_links = getAllLinks(self.soup)
+        # Get last page number
+        pages = 0
+        print('[*] Searching for page boundaries')
+        for a in cover_page_links:
+            if "?p=" in a:
+                num = int(a.split('=')[1])
+                if num > pages:
+                    pages = num
+        print('[+] Determined number_of_pages: %d' % int(pages))
+
+        all_links = cover_page_links
+        if pages > 0:
+            all_links = cover_page_links
+            for i in range(2, pages+1, 1):
+                resp = self.loadPatreonIDandPage(pid, i)
+                soup = self.soup = BeautifulSoup(resp.content, "html.parser")
+                links = getAllLinks(soup)
+                for l in links:
+                    all_links.append(l)
+
+        scrap_len = len(all_links)
+        print("[*] scraped (%d) urls" % (scrap_len))
+        all_links = list(set(all_links))
+        dedup_len = len(all_links)
+        print("[*] deduped (%d) urls" % (dedup_len))
+        patreon_links = matchPatreonLinks(all_links, self.patreon_matchers)
+        patreon_len = len(patreon_links)
+        print("[*] found (%d) patreon urls" % (len(patreon_links)))
         return {
             'artist': artist,
             'patreon_post_count': patreon_post_count,
             'shared_file_count': shared_file_count,
+            'number_of_pages': pages,
+            'scrap_count': scrap_len,
+            'dedup_count': dedup_len,
+            'patreon_count': patreon_len,
+            'all_links': all_links,
             'patreon_links': patreon_links,
-            'other_links': other_links,
         }
 
     """ Called on cache misses or cache invalid """    
