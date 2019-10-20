@@ -91,15 +91,18 @@ def main():
             print('[*] --> This directory will be created if absent and navigated into')
 
         # foreach patreon
-        for pid,entry in pg_state.patreon_dict.items():
+        #for pid,entry in pg_state.patreon_dict.items():
+        for pid in pg_state.patreon_list:
             if args.verbose:
-                print('[*] Handling patron %d => %s' % (int(pid), str(entry)))
+                #print('[*] Handling patron %d => %s' % (int(pid), str(entry)))
+                print('[*] Handling patron %d' % (int(pid)))
                 print('[*] Gathering metadata')
 
             metadata = pg_state.patreon_metadata = rs.getPatreonMetadata(pid)
             artist = metadata['artist']
-            patreon_links = all_links = metadata['all_links']
-
+            all_links = metadata['all_links']
+            patreon_links = metadata['patreon_links']
+            
             # create artist directory and/or chdir to it
             target = pg_state.lastTarget = os.path.join(output_path, artist)
             if not os.path.exists(target):
@@ -108,7 +111,28 @@ def main():
             if args.verbose:
                 print('[*] set pg_state.lastTarget = %s' % (pg_state.lastTarget) )
                 print('[*] --> This directory will be created if absent and navigated into')
-                
+
+            fname = "site.json"
+            print("Writing (%s)" % (fname) )
+            with open(fname, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, ensure_ascii=False, indent=4)
+            fname = "all-urls.json"
+            print("Writing (%s)" % (fname) )
+            with open(fname, 'w', encoding='utf-8') as f:
+                json.dump(metadata['all_links'], f, ensure_ascii=False, indent=4)
+            fname = "patreon-urls.json"
+            print("Writing (%s)" % (fname) )
+            with open(fname, 'w', encoding='utf-8') as f:
+                json.dump(metadata['patreon_links'], f, ensure_ascii=False, indent=4)
+
+            # create patreonDownloads directory and/or chdir to it
+            target = pg_state.lastTarget = os.path.join(pg_state.lastTarget, "patreonDownloads")
+            if not os.path.exists(target):
+                os.makedirs(target)
+            os.chdir(target)
+            if args.verbose:
+                print('[*] set pg_state.lastTarget = %s' % (pg_state.lastTarget) )
+                print('[*] --> This directory will be created if absent and navigated into')
             for link in patreon_links:
                 rs.download(link)
 

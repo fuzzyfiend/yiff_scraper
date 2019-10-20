@@ -4,11 +4,21 @@
 * Support Google Drive
 * Support other file-lockers
 * Ensure (Files) are being scrapped
+* handle same filenames better
+
+## Verbosity
+* Tally cache hit/misses during runs
+* Offer percentages to drive future runs for development
 
 ## Execution
 * Be more persistent
     * save traveled links to disk to speed up crawling
     * resume from last run
+* Handle differences in config file
+    * prefer list format as that is the native export method
+    * when list format doesn't match dictionary
+        * collect metadata for artist and build matching dictionary. Write config
+        * overwrite at first, consider merging strategy
 
 ## Requests
 * Modify User-Agent
